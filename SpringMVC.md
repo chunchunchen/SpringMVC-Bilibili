@@ -261,7 +261,7 @@ public class ItemsController1 implements Controller{
 
 
 
-## 2.7 配置处理器即Handler
+## 2.7 配置Handler(处理器)
 
 在2.3中新建的classpath下的springmvc.xml中配置Handler。关键代码如下
 
@@ -372,9 +372,9 @@ public class ItemsController1 implements Controller{
 
 
 
-## 三、 非注解的处理器映射器和适配器
+# 三、 非注解的处理器映射器和适配器
 
-### 3.1 非注解的处理器映射器
+## 3.1 非注解的处理器映射器
 
 上面2.8用到的处理器映射器配置为
 
@@ -408,7 +408,7 @@ public class ItemsController1 implements Controller{
 
 多个映射器可以并存，前端控制器会判断url，能让哪些映射器映射，就让正确的映射器处理。
 
-### 3.2 非注解的处理器适配器
+## 3.2 非注解的处理器适配器
 
 上面2.4节用到的处理器适配器为
 
@@ -507,4 +507,173 @@ Handler开发完以后，需要将对应的Handler配置和映射器配置都配
 
 ![image-20200209172609143](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209172609143.png)
 
-到此为止，实现了第二种配置下的访问效果。上传代码到GitHub，地址
+==到此为止，实现了第二种配置下的访问效果。上传代码到GitHub，地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为9316c4d0f8c6ecfe9002956e1aecff98eb138619。==
+
+# 四、DispatcherServlet.properties
+
+需要注意的一点是，即使将springmvc.xml中处理器映射器HandlerMapping和处理器适配器HandlerAdapter删掉，项目依然可以正常运行！这是因为，前端控制器DispatcherServlet提供一个默认的配置文件，位置在spring-webmvc-3.2.0.RELEASE.jar源代码的org.springframework.web.servlet包中，有一个DispatcherServlet.properties，部分代码如下
+
+```properties
+...
+org.springframework.web.servlet.HandlerMapping=org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping,\
+	org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping
+
+org.springframework.web.servlet.HandlerAdapter=org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter,\
+	org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter,\
+	org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter
+...
+```
+
+可以看出，里面提供了几种默认的配置，以逗号分隔。其中上面的org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping和org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter是在spring3.1之前使用的默认的处理器映射器和适配器，因此如果采用注解的开发，并且不在springmvc.xml中显示配置的话，就会使用默认的过期的映射器和适配器。
+
+> > 源码分析
+>
+> org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping.class部分代码如下
+>
+> ```class
+>  * @since 2.5
+>  * @see RequestMapping
+>  * @see AnnotationMethodHandlerAdapter
+>  *
+>  * @deprecated in Spring 3.2 in favor of
+>  * {@link org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping RequestMappingHandlerMapping}
+>  */
+> ```
+>
+> 可以看出从spring2.5以后开始使用，而在spring3.2以后推荐用RequestMappingHandlerMapping。点开org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping.class源码
+>
+> ```class
+>  * @author Arjen Poutsma
+>  * @author Rossen Stoyanchev
+>  * @since 3.1
+>  */
+> ```
+>
+> 可以看到从spring3.1以后开始使用这种注解的开发配置。
+
+# 五、 注解的处理器映射器和适配器
+
+在第四节中我们知道了，对于注解模式的开发，在spring3.1之前使用org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping注解映射器。
+
+在spring3.1之后使用org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping注解映射器。
+
+在spring3.1之前使用org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter注解适配器。
+
+在spring3.1之后使用org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter注解适配器。
+
+## 5.1 配置注解的处理器映射器和适配器
+
+注解映射器的一种配置方式如下
+
+```xml
+<!--注解映射器 -->
+<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"/>
+<!--注解适配器 -->
+<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"/>
+```
+
+此外还有另一种方式
+
+```xml
+<!-- 使用 mvc:annotation-driven可以代替上边注解映射器和注解适配器配置。
+	mvc:annotation-driven默认加载很多的参数绑定方法，
+	比如json转换解析器就默认加载了，如果使用mvc:annotation-driven则不用配置上边的RequestMappingHandlerMapping和RequestMappingHandlerAdapter。
+	实际开发时使用mvc:annotation-driven
+	 -->
+<mvc:annotation-driven></mvc:annotation-driven>
+```
+
+## 5.2 开发注解Handler
+
+使用注解的映射器和注解的适配器（注解的映射器和注解的适配器要配对使用）。新建一个ItemsController3.java，关键代码如下（关注一下两个注解用法）
+
+```java
+@Controller
+public class ItemsController3{
+	
+	//商品查询列表
+	//@RequestMapping实现对queryItems方法和url进行映射，一个方法对应一个url
+	//一般建议将url和方法名设成一样
+	@RequestMapping("/queryItems")
+	public ModelAndView queryItems() {
+		
+		//调用service查找数据库，查询商品列表。此处先用静态数据模拟
+		List<Items> itemsList = new ArrayList<Items>();
+		//向list中填充静态数据
+		...		
+		//返回ModelAndView
+		ModelAndView modelAndView = new ModelAndView();
+		//相当于request的setAttribut，在jsp中通过itemsList取数据
+		modelAndView.addObject("itemsList",itemsList);
+		//指定视图
+		modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
+		
+		//返回ModelAndView
+		return modelAndView;
+	}
+	
+	//此处可以定义其它方法
+	//商品添加
+	//商品修改
+}
+```
+
+> 注：由于这里写的url为@RequestMapping("/queryItems")，为了区别，将原来的第一种Handler配置改成下面（加一个_test）
+>
+> ```xml
+> <bean id="itemsController1" name="/queryItems_test.action" class="cn.chen.ssm.controller.ItemsController1"/>
+> ```
+
+
+
+## 5.3 在Spring容器中加载Handler
+
+配置Handler可以单独配置
+
+```xml
+<bean class="cn.itcast.ssm.controller.ItemsController3" />
+```
+
+但是如果Handler很多，一个一个配置就很麻烦，因此可以用下面注解扫描的方式
+
+```xml
+<!-- 可以扫描controller、service、...
+这里让扫描controller，指定controller的包。
+扫描controller注解,多个包中间使用半角逗号分隔
+ -->
+<context:component-scan base-package="cn.chen.ssm.controller"></context:component-scan>
+```
+
+在bask-package指定的包下，自动扫描标记@controller的控制器类。
+
+## 5.4 部署调试
+
+启动后访问http://localhost:8080/springmvcfirst20200205/queryItems.action，发现报错了
+
+![image-20200209211507493](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209211507493.png)
+
+其中关键错误信息为
+
+```java
+java.lang.IllegalArgumentException
+	at org.springframework.asm.ClassReader.<init>(Unknown Source)
+	at org.springframework.asm.ClassReader.<init>(Unknown Source)
+	at org.springframework.asm.ClassReader.<init>(Unknown Source)
+```
+
+查了下资料，发现是由于spring版本与Java版本以对应导致的。这个地方需要记住两点 
+
+- spring 3.X版本支持到java7 
+- spring 4.X版本支持Java8最低支持到Java6 
+
+[参考链接]: https://blog.csdn.net/yangjiabei_0301/article/details/78247193
+
+将eclipse中的java环境和tomcat环境都换成1.7
+
+<img src="C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209212159964.png" alt="image-20200209212159964" style="zoom:80%;" />
+
+<img src="C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209212256103.png" alt="image-20200209212256103" style="zoom:80%;" />
+
+再次启动tomcat访问，发现可以了
+
+![image-20200209212411639](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209212411639.png)

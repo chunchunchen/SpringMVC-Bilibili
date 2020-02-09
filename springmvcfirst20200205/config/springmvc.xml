@@ -14,7 +14,7 @@
 		http://www.springframework.org/schema/tx/spring-tx-3.2.xsd ">
 		
 	<!-- 配置Handler -->
-	<bean id="itemsController1" name="/queryItems.action" class="cn.chen.ssm.controller.ItemsController1"/>
+	<bean id="itemsController1" name="/queryItems_test.action" class="cn.chen.ssm.controller.ItemsController1"/>
 	<!--  上面的配置如果是直接在controller上右键复制类名，去掉头尾是cn/chen/ssm/controller/ItemsController1，
 	如果直接把这个贴到class里面就会报错，一定记得改成是.分割的cn.chen.ssm.controller.ItemsController1-->
 	<!-- 配置另外一个Handler -->
@@ -47,6 +47,19 @@
 	<bean 
 		class="org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter"/>
 	
+	<!-- 对于注解的Handler可以单个配置
+	实际开发中建议使用组件扫描
+	 -->
+	<!-- <bean class="cn.itcast.ssm.controller.ItemsController3" /> -->
+	<!-- 可以扫描controller、service、...
+	这里让扫描controller，指定controller的包
+	 -->
+	<context:component-scan base-package="cn.chen.ssm.controller"></context:component-scan>
+	
+	<!--注解映射器 -->
+	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"/>
+	<!--注解适配器 -->
+	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"/>
 	
 	<!-- 视图解析器 
 	解析jsp视图，默认使用jstl标签，classpath下得有jstl的包-->
