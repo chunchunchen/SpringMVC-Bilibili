@@ -62,6 +62,8 @@ mvc是一个设计模式，mvc在b/s系统 下的应用:
 
 # 二、入门程序
 
+本节先用==非注解==的方式实现。
+
 ## 2.1 需求
 
 以案例作为需求，使用商品订单管理的案例。功能需求是，商品列表查询。
@@ -98,7 +100,7 @@ SpringMVC版本：3.2
   <servlet-mapping>
   	<servlet-name>springmvc</servlet-name>
   	<!-- ulr-pattern有三种配置:
-  	第一种:*。action，访问以.action结尾的url时用DispatcherServlet解析
+  	第一种:*.action，访问以.action结尾的url时用DispatcherServlet解析
   	第二种:/,所有访问的地址都由DispatcherServlet解析，对于静态文件的解析需要配置不让DispatcherServlet进行解析
   	使用此种方法可以实现RESTful风格的url
   	第三种:/*,这样配置不对，使用这种配置，最终要转发到一个jsp页面时，仍然会由DispatcherServlet解析jsp，不能根据jsp页面找到handler,会报错
@@ -259,7 +261,7 @@ public class ItemsController1 implements Controller{
 
 
 
-## 2.7 配置Handler
+## 2.7 配置处理器即Handler
 
 在2.3中新建的classpath下的springmvc.xml中配置Handler。关键代码如下
 
@@ -301,6 +303,10 @@ public class ItemsController1 implements Controller{
 ## 2.10 部署调试
 
 访问地址http://localhost:8080/springmvcfirst20200205/queryItems.action。
+
+------
+
+遇到了一下问题，记录如下。
 
 > - 报错啦，网页端先报500，刷新后报404，具体如下图，
 >
@@ -344,7 +350,161 @@ public class ItemsController1 implements Controller{
 > <bean name="/queryItems.action" class="cn.chen.ssm.controller.ItemsController1"/>
 > ```
 
+------
+
 修改完上述bug后，把tomcat/webapps下的项目删了重新publish一下再启动，就可以看到效果啦
 
-![image-20200206163342835](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200206163342835.png)
+![image-20200209172656538](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209172656538.png)
 
+==***到此为止对应的码云地址为https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为e469efa8d5131a0c3a9d48d1ec6e234f80c80873​***==
+
+------
+
+> 此外，老师还讲了两种错误。一种是地址栏url输错了，把localhost:8080/springmvcfirst20200205/queryItems.action错输成了localhost:8080/springmvcfirst20200205/queryItemss.action，报错为
+>
+> <img src="C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200206171114221.png" alt="image-20200206171114221" style="zoom:80%;" />
+>
+> 这是因为处理器映射器根据url找不到Handler。还有一种错误是springmvc.xml中配置和url输入的都是/queryItems.action，但是在controller里最后返回的viewname设置错了为itemsLists.jsp与jsp文件名不一致，则报错为
+>
+> <img src="C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200206171836145.png" alt="image-20200206171836145" style="zoom:80%;" />
+>
+> 这是因为处理器映射器根据url找到了Handler，但是转发的jsp页面找不到，说明jsp页面地址错了。
+
+
+
+## 三、 非注解的处理器映射器和适配器
+
+### 3.1 非注解的处理器映射器
+
+上面2.8用到的处理器映射器配置为
+
+```xml
+<bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+```
+
+此外还有另一种映射器
+
+```xml
+<!--简单url映射  -->
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<!-- 对itemsController1进行url映射，url是/queryItems1.action -->
+				<prop key="/queryItems1.action">itemsController1</prop>
+				<prop key="/queryItems2.action">itemsController1</prop>
+			</props>
+		</property>
+	</bean>
+```
+
+需要注意的是，上述配置中，prop里面配置的是controller的bean id，因此需要将2.7中Handler的配置加上id
+
+```xml
+<!-- 配置Handler -->
+	<bean id="itemsController1" name="/queryItems.action"  class="cn.chen.ssm.controller.ItemsController1"/>
+```
+
+> 两种配置可以同时存在，都可以访问。如果上面Handler配置里去掉了name配置，则只能通过两个key指定的url来访问。
+
+多个映射器可以并存，前端控制器会判断url，能让哪些映射器映射，就让正确的映射器处理。
+
+### 3.2 非注解的处理器适配器
+
+上面2.4节用到的处理器适配器为
+
+```xml
+<!-- 处理器适配器
+	所有的处理器适配器都实现HandlerAdapter接口 -->
+<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter"/>
+```
+
+通过前面的源码分析我们知道，它要求编写的Handler实现Controller接口。
+
+此外还有另一种非注解的适配器
+
+```xml
+<!-- 另一个非注解的适配器 -->
+	<bean class="org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter"/>
+```
+
+> > 源码分析
+>
+> 查看源码,部分代码如下
+>
+> ```java
+> public class HttpRequestHandlerAdapter implements HandlerAdapter {
+> 
+> 	public boolean supports(Object handler) {
+> 		return (handler instanceof HttpRequestHandler);
+> 	}
+>     ...
+> ```
+>
+> 再点开HttpRequestHandler接口，可以看出里面只有一个方法
+>
+> ```java
+> public interface HttpRequestHandler {
+> 
+> 	/**
+> 	 * Process the given request, generating a response.
+> 	 * @param request current HTTP request
+> 	 * @param response current HTTP response
+> 	 * @throws ServletException in case of general errors
+> 	 * @throws IOException in case of I/O errors
+> 	 */
+> 	void handleRequest(HttpServletRequest request, HttpServletResponse response)
+> 			throws ServletException, IOException;
+> 
+> }
+> ```
+>
+> 从上面的源码中，可以看出它要求编写的Handler实现HttpRequestHandler接口，里面包含一个方法。
+
+下面编写它。新建一个ItemsController2.java，关键代码如下
+
+```java
+public class ItemsController2 implements HttpRequestHandler{
+	public void handleRequest(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		
+		//调用service查找数据库，查询商品列表。此处先用静态数据模拟
+		List<Items> itemsList = new ArrayList<Items>();
+		//向list中填充静态数据
+		...略
+		//设置模型数据
+		request.setAttribute("itemsList", itemsList);
+		//设置转发的视图
+		request.getRequestDispatcher("/WEB-INF/jsp/items/itemsList.jsp").forward(request, response);
+	}
+}
+```
+
+> 从上边可以看出此适配器器的handleRequest方法没有返回ModelAndView，可通过response修改设置响应内容，比如返回json数据：
+>
+> response.setCharacterEncoding("utf-8");
+>
+> response.setContentType("application/json;charset=utf-8");
+>
+> response.getWriter().write("json串");
+
+Handler开发完以后，需要将对应的Handler配置和映射器配置都配进去，这里采用上面第二种方法
+
+```xml
+<!-- 配置另外一个Handler -->
+	<bean id="itemsController2" class="cn.chen.ssm.controller.ItemsController2" />
+	<!--简单url映射  -->
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<!-- 对itemsController1进行url映射，url是/queryItems1.action -->
+				<prop key="/queryItems3.action">itemsController2</prop>
+			</props>
+		</property>
+	</bean>
+```
+
+配置完后启动调试，访问http://localhost:8080/springmvcfirst20200205/queryItems3.action即可看到效果。
+
+![image-20200209172609143](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209172609143.png)
+
+到此为止，实现了第二种配置下的访问效果。上传代码到GitHub，地址

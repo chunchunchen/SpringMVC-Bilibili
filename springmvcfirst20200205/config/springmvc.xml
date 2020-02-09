@@ -13,18 +13,41 @@
 		http://www.springframework.org/schema/tx 
 		http://www.springframework.org/schema/tx/spring-tx-3.2.xsd ">
 		
-		<!-- 配置Handler -->
-		<bean name="/queryItems.action" class="cn.chen.ssm.controller.ItemsController1"/>
-		<!--  上面的配置如果是直接在controller上右键复制类名，去掉头尾是cn/chen/ssm/controller/ItemsController1，
-		如果直接把这个贴到class里面就会报错，一定记得改成是.分割的cn.chen.ssm.controller.ItemsController1-->
+	<!-- 配置Handler -->
+	<bean id="itemsController1" name="/queryItems.action" class="cn.chen.ssm.controller.ItemsController1"/>
+	<!--  上面的配置如果是直接在controller上右键复制类名，去掉头尾是cn/chen/ssm/controller/ItemsController1，
+	如果直接把这个贴到class里面就会报错，一定记得改成是.分割的cn.chen.ssm.controller.ItemsController1-->
+	<!-- 配置另外一个Handler -->
+	<bean id="itemsController2" class="cn.chen.ssm.controller.ItemsController2" />
+	
 	<!-- 处理器映射器
 	     将bean的name作为url进行查找，需要在配置Handler时指定beanname(就是url) -->
 	<bean 
 		class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping" />
+	
+	<!--简单url映射  -->
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="mappings">
+			<props>
+				<!-- 对itemsController1进行url映射，url是/queryItems1.action -->
+				<prop key="/queryItems1.action">itemsController1</prop>
+				<prop key="/queryItems2.action">itemsController1</prop>
+				<prop key="/queryItems3.action">itemsController2</prop>
+			</props>
+		</property>
+	</bean>
+	
+	
+	
 	<!-- 处理器适配器
 		所有的处理器适配器都实现HandlerAdapter接口 -->
 	<bean 
 		class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
+	<!-- 另一个非注解的适配器 -->
+	<bean 
+		class="org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter"/>
+	
+	
 	<!-- 视图解析器 
 	解析jsp视图，默认使用jstl标签，classpath下得有jstl的包-->
 	<bean 
