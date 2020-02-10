@@ -677,3 +677,189 @@ java.lang.IllegalArgumentException
 再次启动tomcat访问，发现可以了
 
 ![image-20200209212411639](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209212411639.png)
+
+==至此注解情况下的开发访问也好了，上传GitHub地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为c7bff6ebfdfaf28ca33f5b9896af76f00cdd7d9a==
+
+# 六、 源码分析
+
+通过前端控制器源码，分析SpringMVC的执行过程。
+
+第一步：前端控制器接收请求，调用doDispatch
+
+(文件位置org.springframework.web.servlet.DispatcherServlet.class，可从web.xml中点进来)
+
+```java
+protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		HttpServletRequest processedRequest = request;
+		HandlerExecutionChain mappedHandler = null;
+		boolean multipartRequestParsed = false;
+    ...
+```
+
+第二步：前端控制器调用处理器映射器查找Handler
+
+```java
+// Determine handler for the current request.
+				mappedHandler = getHandler(processedRequest, false);
+...
+...
+    
+    protected HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
+		for (HandlerMapping hm : this.handlerMappings) {
+			if (logger.isTraceEnabled()) {
+				logger.trace(
+						"Testing handler map [" + hm + "] in DispatcherServlet with name '" + getServletName() + "'");
+			}
+			HandlerExecutionChain handler = hm.getHandler(request);
+			if (handler != null) {
+				return handler;
+			}
+		}
+		return null;
+	}
+```
+
+第三步，调用处理器适配器执行Handler，得到执行结果ModelAndView
+
+```java
+try {
+					// Actually invoke the handler.
+					mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+				}
+```
+
+第四步，视图渲染，将model数据填充到request域。
+
+视图解析，得到View:
+
+```java
+render(mv, request, response);
+...
+    //点进去render方法
+    // We need to resolve the view name.
+			view = resolveViewName(mv.getViewName(), mv.getModelInternal(), locale, request);
+```
+
+调用view的渲染方法
+
+```java
+view.render(mv.getModelInternal(), request, response);
+```
+
+其中调用
+
+```java
+renderMergedOutputModel(mergedModel, request, response);
+```
+
+对于jsp的解析器InternalResourceViewResolver调用
+
+```java
+// Expose the model object as request attributes.
+		exposeModelAsRequestAttributes(model, requestToExpose);
+```
+
+对应的方法实现为
+
+```java
+protected void exposeModelAsRequestAttributes(Map<String, Object> model, HttpServletRequest request) throws Exception {
+		for (Map.Entry<String, Object> entry : model.entrySet()) {
+			String modelName = entry.getKey();
+			Object modelValue = entry.getValue();
+			if (modelValue != null) {
+				request.setAttribute(modelName, modelValue);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Added model object '" + modelName + "' of type [" + modelValue.getClass().getName() +
+							"] to request in view with name '" + getBeanName() + "'");
+				}
+			}
+			else {
+				request.removeAttribute(modelName);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Removed model object '" + modelName +
+							"' from request in view with name '" + getBeanName() + "'");
+				}
+			}
+		}
+	}
+```
+
+可以看出将model作为map遍历，用setAttribute方法一个一个填入request中。
+
+
+
+# 七、 入门程序小结
+
+通过入门程序理解SpringMVC的前端控制器、**处理器映射器、处理器适配器**、视图解析器。
+
+- 前端控制器配置(主要是url的pattern配置):
+
+```xml
+第一种:*。action，访问以.action结尾的url时用DispatcherServlet解析
+第二种:/,所有访问的地址都由DispatcherServlet解析，对于静态文件的解析需要配置不让DispatcherServlet进行解析。使用此种方法可以实现RESTful风格的url
+```
+
+- 处理器映射器：
+
+- 非注解处理器映射器(了解):
+
+- 注解处理器映射器(掌握):
+
+  对标记@Controller注解的类中，标识有@RequestMapping的方法进行映射。在@RequestMapping里面定义映射的url。因此使用注解的映射器不用在xml中配置url和Handler的映射关系。
+
+- 处理器适配器
+
+- 非注解处理器适配器(了解)
+
+- 注解的处理器适配器(掌握)
+
+  注解的处理器适配器和注解的处理器映射器是配对使用的。即不能使用非注解的处理器映射器进行映射。
+
+- mvc的注解驱动
+
+  ```xml
+  <mvc:annotation-driven></mvc:annotation-driven>
+  ```
+
+  可以代替下面的配置
+
+  ```xml
+  <!--注解映射器 -->
+  <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"/>
+  <!--注解适配器 -->
+  <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"/>
+  ```
+
+  实际开发中使用mvc:annotation-driven。
+
+- 视图解析器配置前缀和后缀
+
+  ```xml
+  <!-- 视图解析器
+  	解析jsp解析，默认使用jstl标签，classpath下的得有jstl的包
+  	 -->
+  	<bean
+  		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+  		<!-- 配置jsp路径的前缀 -->
+  		<property name="prefix" value="/WEB-INF/jsp/"/>
+  		<!-- 配置jsp路径的后缀 -->
+  		<property name="suffix" value=".jsp"/>
+  	</bean>
+  ```
+
+  上面的前后缀相当于配置了jsp文件的路径前缀和后缀名，因此程序中就可以只关注中间的文件部分，如果配置了前后缀，相应的ItemsController3可以改成下面的代码
+
+  ```java
+  //指定视图
+  		//下边的路径，如果在视图解析器中配置jsp路径的前缀和jsp路径的后缀，
+  		//modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
+  		//则上边的路径配置可以不在程序中指定jsp路径的前缀和jsp路径的后缀
+  		modelAndView.setViewName("items/itemsList");
+  ```
+
+上传GitHub地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为
+
+# 八、SpringMVC和MyBatis整合
+
+
+

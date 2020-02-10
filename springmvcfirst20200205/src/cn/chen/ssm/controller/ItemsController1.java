@@ -44,6 +44,7 @@ public class ItemsController1 implements Controller{
 		//÷∏∂® ”Õº
 		modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
 		
+		
 		return modelAndView;
 	}
 	

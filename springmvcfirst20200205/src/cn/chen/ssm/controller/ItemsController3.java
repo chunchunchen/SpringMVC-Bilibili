@@ -44,7 +44,10 @@ public class ItemsController3{
 		//相当于request的setAttribut，在jsp中通过itemsList取数据
 		modelAndView.addObject("itemsList",itemsList);
 		//指定视图
-		modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
+		//下边的路径，如果在视图解析器中配置jsp路径的前缀和jsp路径的后缀，
+		//modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
+		//则上边的路径配置可以不在程序中指定jsp路径的前缀和jsp路径的后缀
+		modelAndView.setViewName("items/itemsList");
 		
 		//返回ModelAndView
 		return modelAndView;
