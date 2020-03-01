@@ -678,7 +678,7 @@ java.lang.IllegalArgumentException
 
 ![image-20200209212411639](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200209212411639.png)
 
-==至此注解情况下的开发访问也好了，上传GitHub地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为c7bff6ebfdfaf28ca33f5b9896af76f00cdd7d9a==
+**==至此注解情况下的开发访问也好了，上传GitHub地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为c7bff6ebfdfaf28ca33f5b9896af76f00cdd7d9a==**
 
 # 六、 源码分析
 
@@ -857,9 +857,401 @@ protected void exposeModelAsRequestAttributes(Map<String, Object> model, HttpSer
   		modelAndView.setViewName("items/itemsList");
   ```
 
-上传GitHub地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为
+==**上传GitHub地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为4cb916a33166e6aa4198b7708ce59ab082ce4385**==
 
 # 八、SpringMVC和MyBatis整合
 
+## 8.1 需求
+
+使用SpringMVC和MyBatis完成商品列表查询。
+
+## 8.2 整合思路
+
+SpringMVC + MyBatis的系统架构
+
+![img](file:///C:\Users\Chen\AppData\Local\Temp\ksohtml20020\wps1.png)
+
+1. 第一步：整合dao层
+
+   ​	MyBatis和spring整合，通过spring管理mapper接口。
+
+   ​	使用mapper的扫描器自动扫描mapper接口在spring中进行注册。
+
+2. 第二步：整合service层
+
+   ​	通过spring管理service接口。
+
+   ​	使用配置方式将service接口配置在spring配置文件中。
+
+   ​	实现事务控制。	
+
+3. 第三步：整合SpringMVC
+
+   ​	由于SpringMVC是spring的模块，不需要整合。
+
+   
+
+## 8.3 环境准备
+
+数据库版本：mysql 8.0.12
+
+java版本：jdk 1.7.0_80  (注意这里把jdk换成1.7了)
+
+​                  eclipse Release 4.8.0 (Photon)
+
+SpringMVC版本：3.2
+
+所需要的jar包：
+
+​                   数据库驱动包
+
+​                   MyBatis的jar包
+
+​                   MyBatis和spring整合包
+
+​                   log4j包
+
+​                   dbcp数据库连接池包
+
+​                   spring3.2所有jar
+
+​                   jstl包
+
+1. 新建工程，导入复制jar包
+2. 新建资源文件夹
+3. 新建properties文件
+4. 新建包
+
+工程目录如下：
+
+![image-20200213232849151](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200213232849151.png)
+
+## 8.4 整合dao
+
+MyBatis和Spring进行整合。
+
+### 8.4.1 SQLMapConfig.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	
+	<!-- 全局setting配置，根据需要添加 -->
+	
+	<!-- 配置别名 -->
+	<typeAliases>
+		<!-- 批量扫描别名 -->
+		<package name="cn.itcast.ssm.po"/>
+	</typeAliases>
+
+	<!-- 配置mapper
+	由于使用spring和mybatis的整合包进行mapper扫描，这里不需要配置了。
+	必须遵循：mapper.xml和mapper.java文件同名且在一个目录 
+	 -->
+
+	<!-- <mappers>
+	
+	</mappers> -->
+</configuration>
+```
 
 
+
+### 8.4.2 applicationContext-dao.xml
+
+配置：
+
+数据源
+
+SqlSessionFactory
+
+mapper扫描器
+
+关键内容如下：
+
+```xml
+<!-- 加载db.properties文件中的内容，db.properties文件中key命名要有一定的特殊规则 -->
+	<context:property-placeholder location="classpath:db.properties" />
+	<!-- 配置数据源 ，dbcp -->
+
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="maxActive" value="30" />
+		<property name="maxIdle" value="5" />
+	</bean>
+	<!-- sqlSessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 数据库连接池 -->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 加载mybatis的全局配置文件 -->
+		<property name="configLocation" value="classpath:mybatis/sqlMapConfig.xml" />
+	</bean>
+	<!-- mapper扫描器 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 扫描包路径，如果需要扫描多个包，中间使用半角逗号隔开 -->
+		<property name="basePackage" value="cn.itcast.ssm.mapper"></property>
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+```
+
+### 8.4.3 逆向工程生成po类及mapper(单表增删改查)
+
+![image-20200301143727693](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200301143727693.png)
+
+逆向工程百度一下吧，将生成的包拷贝进来。
+
+### 8.4.4 手动定义商品查询mapper
+
+针对综合查询mapper，一般情况会有关联查询，建议自定义mapper
+
+#### 8.4.4.1 ItemsMapperCustom.xml
+
+sql语句
+
+SELECT * FROM items where items.name like '%笔记本%';
+
+```xml
+<mapper namespace="cn.chen.ssm.mapper.ItemsMapperCustom" >
+	
+	<!-- 定义商品查询的sql片段，这就是商品查询条件 -->
+	<sql id="query_items_where">
+		<!-- 使用动态sql，进行if判断，满足条件进行sql拼接 -->
+		<!-- 商品查询条件通过ItemsQueryVo包装对象中itemsCustom属性传递 -->
+		<if test="itemsCustom != null">
+			<if test="itemsCustom.name!=null and itemsCustom.name!=''">
+				items.name like '${itemsCustom.name}%';
+			</if>
+		</if>
+	</sql>	  
+	<!-- 商品列表查询 -->
+	<!-- parameterType传入包装对象
+			resultType建议使用扩展对象
+	-->
+	<select id="findItemsList" parameterType="cn.chen.ssm.po.ItemsQueryVo" 
+			resultType="cn.chen.ssm.po.ItemsCustom">
+		SELECT * FROM items 
+		<where>
+  			<include refid="query_items_where"></include>
+  		</where>
+	</select>
+</mapper>
+```
+
+在这一步中，parameterType是传入对象，它包含items对象和一个扩展对象
+
+```java
+	//商品信息
+	private Items items;
+	
+	//为了系统可扩展性，对原始 生成的po进行扩展
+	private ItemsCustom itemsCustom;
+```
+
+其中扩展对象ItemsCustom为Items类的继承，以便将来扩展
+
+```java
+package cn.chen.ssm.po;
+//商品信息的扩展类
+public class ItemsCustom extends Items {
+
+}
+```
+
+同时，ItemsCustom也是查询的返回resultType。
+
+#### 8.4.4.2 ItemsMapperCustom.java
+
+```java
+public interface ItemsMapperCustom {
+	//商品查询列表
+	public List<ItemsCustom> findItemsList(ItemsQueryVo itemsQueryVo) throws Exception;
+}
+```
+
+## 8.5 整合service
+
+让Spring管理service接口。
+
+### 8.5.1 定义service接口
+
+新建一个包cn.chen.ssm.service，在里面定义service类ItemsService.java
+
+```java
+public interface ItemsService {
+	//商品查询列表
+	public List<ItemsCustom> findItemsList(ItemsQueryVo itemsQueryVo)throws Exception;
+	
+}
+```
+
+在cn.chen.ssm.service.impl中实现这个方
+
+```java
+//商品管理
+public class ItemsServiceImpl implements ItemsService{
+
+	@Autowired
+	private ItemsMapperCustom itemsMapperCustom;
+	public List<ItemsCustom> findItemsList(ItemsQueryVo itemsQueryVo) throws Exception {
+		//通过ItemsMapperCustom查询数据库
+		return itemsMapperCustom.findItemsList(itemsQueryVo);
+	}
+}
+```
+
+上面，由于ItemsMapperCustom.java和ItemsMapperCustom.xml同名且在同一个目录，所以在SQLMapConfig.xml中配置的mapper扫描器已经将ItemsMapperCustom加载到了Spring容器，这里只需要用@Autowired注入即可使用。
+
+### 8.5.2 在Spring容器中配置service(applicationContext-service.xml)
+
+创建applicationContext-service.xml，文件中配置service。
+
+```xml
+<!-- 商品管理的service -->
+<bean id="itemsService" class="cn.chen.ssm.service.impl.ItemsServiceImpl"/>
+```
+
+### 8.5.3 事务控制(applicationContext-transaction.xml)
+
+```xml
+<!-- 事务管理器
+	对MyBatis操作数据库的事务控制，Spring使用jdbc的事务控制类
+ -->
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+ 	<!-- 数据源
+ 	dataSource在applicationCont-dao.xml中配置了 
+ 	-->
+ 	<property name="dataSource" ref="dataSource"></property>
+</bean>
+<!-- 通知 -->
+<tx:advice id="txAdvice" transaction-manager="transactionManager">
+	<tx:attributes>
+		<!-- 传播行为 -->
+		<tx:method name="save*" propagation="REQUIRED"/>
+		<tx:method name="delete*" propagation="REQUIRED"/>
+		<tx:method name="insert*" propagation="REQUIRED"/>
+		<tx:method name="update*" propagation="REQUIRED"/>
+		<tx:method name="find*" propagation="SUPPORTS" read-only="true"/>
+		<tx:method name="get*" propagation="SUPPORTS" read-only="true"/>
+		<tx:method name="select*" propagation="SUPPORTS" read-only="true"/>
+	</tx:attributes>
+</tx:advice>
+<!-- 配置aop切点 -->
+<aop:config>
+	<aop:advisor advice-ref="txAdvice" pointcut="execution(* cn.chen.ssm.service.impl.*.*(..))"/>
+</aop:config>
+```
+
+## 8.6 整合SpringMVC
+
+### 8.6.1 配置springmvc.xml
+
+创建springmvc.xml文件，配置处理器映射器、适配器、视图解析器
+
+```xml
+	<!-- 可以扫描controller、service、...
+	这里让扫描controller，指定controller的包
+	 -->
+	<context:component-scan base-package="cn.chen.ssm.controller"></context:component-scan>
+	
+	<!--注解映射器 -->
+	<!-- 	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"/> -->
+	<!--注解适配器 -->
+	<!-- 	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter"/> -->
+	<!-- 使用 mvc:annotation-driven代替上边注解映射器和注解适配器配置
+	mvc:annotation-driven默认加载很多的参数绑定方法，
+	比如json转换解析器就默认加载了，如果使用mvc:annotation-driven不用配置上边的RequestMappingHandlerMapping和RequestMappingHandlerAdapter
+	实际开发时使用mvc:annotation-driven
+	 -->
+	<mvc:annotation-driven></mvc:annotation-driven>
+	
+	<!-- 视图解析器 
+	解析jsp视图，默认使用jstl标签，classpath下得有jstl的包-->
+	<bean 
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver" >		
+		<!-- 配置jsp路径的前缀 -->
+		<property name="prefix" value="/WEB-INF/jsp/"/>
+		<!-- 配置jsp路径的后缀 -->
+		<property name="suffix" value=".jsp"/>
+	</bean>
+```
+
+### 8.6.2 配置前端控制器
+
+参考入门程序web.xml
+
+### 8.6.3 编写Controller（就是Handler）
+
+```java
+//商品的controller
+@Controller
+public class ItemsController {
+	@Autowired
+	private ItemsService itemsService;
+	
+	@RequestMapping("/queryItems")
+	public ModelAndView queryItems() throws Exception {
+		
+		//调用service查找数据库，查询商品列表
+		List<ItemsCustom> itemsList = itemsService.findItemsList(null);
+		
+		//返回ModelAndView
+		ModelAndView modelAndView = new ModelAndView();
+		//相当于request的setAttribut，在jsp中通过itemsList取数据
+		modelAndView.addObject("itemsList",itemsList);
+		//指定视图
+		//下边的路径，如果在视图解析器中配置jsp路径的前缀和jsp路径的后缀，
+		//modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
+		//则上边的路径配置可以不在程序中指定jsp路径的前缀和jsp路径的后缀
+		modelAndView.setViewName("items/itemsList");
+		
+		//返回ModelAndView
+		return modelAndView;
+	}
+}
+```
+
+### 8.6.4 编写jsp
+
+参考入门程序
+
+## 8.7 加载spring容器
+
+将mapper、service、controller加载到spring容器
+
+![image-20200301162349633](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200301162349633.png)
+
+建议使用通配符的方法加载上面的配置文件。
+
+在web.xml中，添加spring容器监听器，加载spring容器。
+
+```xml
+<!-- 加载spring容器 -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/classes/spring/applicationContext-*.xml</param-value>
+	</context-param>
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+```
+
+## 8.8 调试
+
+将项目加载到tomcat并启动，访问http://localhost:8080/springmvc_mybatis20200213/queryItems.action
+
+一开始报错了，
+
+> Error querying database.  Cause: org.springframework.jdbc.CannotGetJdbcConnectionException: Could not get JDBC Connection; nested exception is org.apache.commons.dbcp.SQLNestedException: Cannot create PoolableConnectionFactory (Unknown initial character set index '255' received from server. Initial client character set can be forced via the 'characterEncoding' property.)
+
+上网查一下发现是数据库连接的问题，在db.properties里面原来的jdbc.url后面加上?useUnicode=true&characterEncoding=utf8，再重启tomcat后即可访问。
+
+![image-20200301174740484](C:\Users\Chen\AppData\Roaming\Typora\typora-user-images\image-20200301174740484.png)
+
+**==至此整合springmvc和MyBatis可以了，上传GitHub地址https://github.com/chunchunchen/SpringMVC-Bilibili.git，版本为c7bff6ebfdfaf28ca33f5b9896af76f00cdd7d9a==**

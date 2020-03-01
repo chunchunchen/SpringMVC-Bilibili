@@ -13,35 +13,35 @@ import cn.chen.ssm.po.Items;
 
 /**
  * @author Chen
- * Description: ÊµÏÖController½Ó¿ÚµÄ´¦ÀíÆ÷
+ * Description: å®ç°Controlleræ¥å£çš„å¤„ç†å™¨
  *
  */
 public class ItemsController1 implements Controller{
 
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
-		//µ÷ÓÃservice²éÕÒÊı¾İ¿â£¬²éÑ¯ÉÌÆ·ÁĞ±í¡£´Ë´¦ÏÈÓÃ¾²Ì¬Êı¾İÄ£Äâ
+		//è°ƒç”¨serviceæŸ¥æ‰¾æ•°æ®åº“ï¼ŒæŸ¥è¯¢å•†å“åˆ—è¡¨ã€‚æ­¤å¤„å…ˆç”¨é™æ€æ•°æ®æ¨¡æ‹Ÿ
 		List<Items> itemsList = new ArrayList<Items>();
-		//ÏòlistÖĞÌî³ä¾²Ì¬Êı¾İ
+		//å‘listä¸­å¡«å……é™æ€æ•°æ®
 		Items items_1 = new Items();
-		items_1.setName("ÁªÏë±Ê¼Ç±¾");
+		items_1.setName("è”æƒ³ç¬”è®°æœ¬");
 		items_1.setPrice(6000f);
-		items_1.setDetail("ThinkPad T430 ÁªÏë±Ê¼Ç±¾µçÄÔ£¡");
+		items_1.setDetail("ThinkPad T430 è”æƒ³ç¬”è®°æœ¬ç”µè„‘ï¼");
 		
 		Items items_2 = new Items();
-		items_2.setName("Æ»¹ûÊÖ»ú");
+		items_2.setName("è‹¹æœæ‰‹æœº");
 		items_2.setPrice(5000f);
-		items_2.setDetail("iphone6Æ»¹ûÊÖ»ú£¡");
+		items_2.setDetail("iphone6è‹¹æœæ‰‹æœºï¼");
 		
 		itemsList.add(items_1);
 		itemsList.add(items_2);
 		
-		//·µ»ØModelAndView
+		//è¿”å›ModelAndView
 		ModelAndView modelAndView = new ModelAndView();
-		//addObjectÏàµ±ÓÚrequestµÄsetAttribut·½·¨£¬ÔÚjspÒ³ÃæÖĞÍ¨¹ıitemsListÈ¡Êı¾İ
+		//addObjectç›¸å½“äºrequestçš„setAttributæ–¹æ³•ï¼Œåœ¨jspé¡µé¢ä¸­é€šè¿‡itemsListå–æ•°æ®
 		modelAndView.addObject("itemsList", itemsList);
 		
-		//Ö¸¶¨ÊÓÍ¼
+		//æŒ‡å®šè§†å›¾
 		modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
 		
 		

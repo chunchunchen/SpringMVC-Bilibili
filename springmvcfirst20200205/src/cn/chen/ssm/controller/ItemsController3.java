@@ -10,50 +10,50 @@ import cn.chen.ssm.po.Items;
 
 /**
  * @author Chen
- * Description: ÊµÏÖ×¢½âµÄHandler
+ * Description: å®ç°æ³¨è§£çš„Handler
  *
  */
-//Ê¹ÓÃController×¢½â±êÊ¶ËüÊÇÒ»¸ö¿ØÖÆÆ÷
+//ä½¿ç”¨Controlleræ³¨è§£æ ‡è¯†å®ƒæ˜¯ä¸€ä¸ªæ§åˆ¶å™¨
 @Controller
 public class ItemsController3{
 	
-	//ÉÌÆ·²éÑ¯ÁĞ±í
-	//@RequestMappingÊµÏÖ¶ÔqueryItems·½·¨ºÍurl½øĞĞÓ³Éä£¬Ò»¸ö·½·¨¶ÔÓ¦Ò»¸öurl
-	//Ò»°ã½¨Òé½«urlºÍ·½·¨ÃûÉè³ÉÒ»Ñù
+	//å•†å“æŸ¥è¯¢åˆ—è¡¨
+	//@RequestMappingå®ç°å¯¹queryItemsæ–¹æ³•å’Œurlè¿›è¡Œæ˜ å°„ï¼Œä¸€ä¸ªæ–¹æ³•å¯¹åº”ä¸€ä¸ªurl
+	//ä¸€èˆ¬å»ºè®®å°†urlå’Œæ–¹æ³•åè®¾æˆä¸€æ ·
 	@RequestMapping("/queryItems")
 	public ModelAndView queryItems() {
 		
-		//µ÷ÓÃservice²éÕÒÊı¾İ¿â£¬²éÑ¯ÉÌÆ·ÁĞ±í¡£´Ë´¦ÏÈÓÃ¾²Ì¬Êı¾İÄ£Äâ
+		//è°ƒç”¨serviceæŸ¥æ‰¾æ•°æ®åº“ï¼ŒæŸ¥è¯¢å•†å“åˆ—è¡¨ã€‚æ­¤å¤„å…ˆç”¨é™æ€æ•°æ®æ¨¡æ‹Ÿ
 		List<Items> itemsList = new ArrayList<Items>();
-		//ÏòlistÖĞÌî³ä¾²Ì¬Êı¾İ
+		//å‘listä¸­å¡«å……é™æ€æ•°æ®
 		Items items_1 = new Items();
-		items_1.setName("ÁªÏë±Ê¼Ç±¾");
+		items_1.setName("è”æƒ³ç¬”è®°æœ¬");
 		items_1.setPrice(6000f);
-		items_1.setDetail("ThinkPad T430 ÁªÏë±Ê¼Ç±¾µçÄÔ£¡");
+		items_1.setDetail("ThinkPad T430 è”æƒ³ç¬”è®°æœ¬ç”µè„‘ï¼");
 		
 		Items items_2 = new Items();
-		items_2.setName("Æ»¹ûÊÖ»ú");
+		items_2.setName("è‹¹æœæ‰‹æœº");
 		items_2.setPrice(5000f);
-		items_2.setDetail("iphone6Æ»¹ûÊÖ»ú£¡");
+		items_2.setDetail("iphone6è‹¹æœæ‰‹æœºï¼");
 		
 		itemsList.add(items_1);
 		itemsList.add(items_2);
 		
-		//·µ»ØModelAndView
+		//è¿”å›ModelAndView
 		ModelAndView modelAndView = new ModelAndView();
-		//Ïàµ±ÓÚrequestµÄsetAttribut£¬ÔÚjspÖĞÍ¨¹ıitemsListÈ¡Êı¾İ
+		//ç›¸å½“äºrequestçš„setAttributï¼Œåœ¨jspä¸­é€šè¿‡itemsListå–æ•°æ®
 		modelAndView.addObject("itemsList",itemsList);
-		//Ö¸¶¨ÊÓÍ¼
-		//ÏÂ±ßµÄÂ·¾¶£¬Èç¹ûÔÚÊÓÍ¼½âÎöÆ÷ÖĞÅäÖÃjspÂ·¾¶µÄÇ°×ººÍjspÂ·¾¶µÄºó×º£¬
+		//æŒ‡å®šè§†å›¾
+		//ä¸‹è¾¹çš„è·¯å¾„ï¼Œå¦‚æœåœ¨è§†å›¾è§£æå™¨ä¸­é…ç½®jspè·¯å¾„çš„å‰ç¼€å’Œjspè·¯å¾„çš„åç¼€ï¼Œ
 		//modelAndView.setViewName("/WEB-INF/jsp/items/itemsList.jsp");
-		//ÔòÉÏ±ßµÄÂ·¾¶ÅäÖÃ¿ÉÒÔ²»ÔÚ³ÌĞòÖĞÖ¸¶¨jspÂ·¾¶µÄÇ°×ººÍjspÂ·¾¶µÄºó×º
+		//åˆ™ä¸Šè¾¹çš„è·¯å¾„é…ç½®å¯ä»¥ä¸åœ¨ç¨‹åºä¸­æŒ‡å®šjspè·¯å¾„çš„å‰ç¼€å’Œjspè·¯å¾„çš„åç¼€
 		modelAndView.setViewName("items/itemsList");
 		
-		//·µ»ØModelAndView
+		//è¿”å›ModelAndView
 		return modelAndView;
 	}
 	
-	//´Ë´¦¿ÉÒÔ¶¨ÒåÆäËü·½·¨
-	//ÉÌÆ·Ìí¼Ó
-	//ÉÌÆ·ĞŞ¸Ä
+	//æ­¤å¤„å¯ä»¥å®šä¹‰å…¶å®ƒæ–¹æ³•
+	//å•†å“æ·»åŠ 
+	//å•†å“ä¿®æ”¹
 }
